@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidAmount() {
+      return request.resource.data.amount is number;
+    }
+
+    function hasRequiredFields(requiredFields) {
+      return request.resource.data.keys().hasAll(requiredFields);
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if false; // Prevent user deletion through client
+    }
+
+    // Wallets collection
+    match /wallets/{walletId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidAmount();
+      allow update: if isOwner(resource.data.userId) && isValidAmount();
+      allow delete: if false; // Prevent wallet deletion
+    }
+
+    // Incomes collection
+    match /incomes/{incomeId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidAmount() &&
+                      hasRequiredFields(['name', 'amount', 'frequency']);
+      allow update: if isOwner(resource.data.userId) && isValidAmount();
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Expenses collection
+    match /expenses/{expenseId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidAmount() &&
+                      hasRequiredFields(['name', 'amount', 'dueDate']);
+      allow update: if isOwner(resource.data.userId) && isValidAmount();
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Loans collection
+    match /loans/{loanId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidAmount() &&
+                      hasRequiredFields(['name', 'initialPrincipal', 'currentBalance', 'monthlyPayment']);
+      allow update: if isOwner(resource.data.userId) && isValidAmount();
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Credit Cards collection
+    match /creditCards/{cardId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidAmount() &&
+                      hasRequiredFields(['name', 'currentBalance', 'creditLimit']);
+      allow update: if isOwner(resource.data.userId) && isValidAmount();
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Transactions collection
+    match /transactions/{transactionId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      isValidAmount() &&
+                      hasRequiredFields(['amount', 'type', 'date']);
+      allow update: if false; // Transactions should be immutable
+      allow delete: if false; // Prevent transaction deletion
+    }
+  }
+}
