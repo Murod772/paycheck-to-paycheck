@@ -131,14 +131,7 @@ export class CreditCardService {
       createdAt: Timestamp.now(),
     };
 
-    // Update the card's statement balance
-    const newBalance = card.statementBalance - amount;
-    await updateDoc(cardRef, {
-      statementBalance: newBalance,
-      updatedAt: Timestamp.now(),
-    });
-
-    // Subtract the payment from the wallet
+    // First check if we can make the wallet transaction
     await WalletService.updateBalance(
       -amount, // Negative amount since it's an expense
       'expense',
@@ -146,6 +139,13 @@ export class CreditCardService {
       'Credit Card',
       cardId
     );
+
+    // If wallet transaction succeeded, update the card's statement balance
+    const newBalance = card.statementBalance - amount;
+    await updateDoc(cardRef, {
+      statementBalance: newBalance,
+      updatedAt: Timestamp.now(),
+    });
 
     // Add the payment record
     const paymentRef = await addDoc(
