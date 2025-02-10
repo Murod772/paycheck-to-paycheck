@@ -99,33 +99,36 @@ export class ExpenseService {
       throw new Error('User must be authenticated');
     }
 
-    const expenseRef = this.getUserExpenseDoc(userId, expenseId);
-    const wallet = await WalletService.getWallet();
+    // Initialize wallet if it doesn't exist
+    await WalletService.initializeWallet();
 
+    const expenseRef = this.getUserExpenseDoc(userId, expenseId);
+    const expenseDoc = await getDoc(expenseRef);
+
+    if (!expenseDoc.exists()) {
+      throw new Error('Expense not found');
+    }
+
+    const expense = expenseDoc.data() as ExpenseModel;
+    if (expense.userId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    if (expense.isPaid) {
+      throw new Error('Expense is already paid');
+    }
+
+    const wallet = await WalletService.getWallet();
     if (!wallet) {
       throw new Error('Wallet not found');
     }
 
+    // Check if wallet has sufficient balance
+    if (!allowNegativeBalance && wallet.currentBalance < expense.amount) {
+      throw new Error('Insufficient funds');
+    }
+
     await runTransaction(db, async (transaction) => {
-      const expenseDoc = await transaction.get(expenseRef);
-      if (!expenseDoc.exists()) {
-        throw new Error('Expense not found');
-      }
-
-      const expense = expenseDoc.data() as ExpenseModel;
-      if (expense.userId !== userId) {
-        throw new Error('Unauthorized');
-      }
-
-      if (expense.isPaid) {
-        throw new Error('Expense is already paid');
-      }
-
-      // Check if wallet has sufficient balance
-      if (!allowNegativeBalance && wallet.currentBalance < expense.amount) {
-        throw new Error('Insufficient funds');
-      }
-
       // Update expense
       transaction.update(expenseRef, {
         isPaid: true,
@@ -134,29 +137,14 @@ export class ExpenseService {
       });
 
       // Update wallet balance
-      const walletRef = doc(db, Collections.WALLETS, wallet.id);
-      transaction.update(walletRef, {
-        previousBalance: wallet.currentBalance,
-        currentBalance: wallet.currentBalance - expense.amount,
-        lastUpdated: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      // Create transaction record
-      const transactionRef = doc(collection(db, Collections.TRANSACTIONS));
-      const newTransaction = {
-        userId,
-        amount: expense.amount,
-        type: 'expense',
-        category: expense.category,
-        description: `Payment for: ${expense.name}`,
-        date: serverTimestamp(),
-        balance: wallet.currentBalance - expense.amount,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      transaction.set(transactionRef, newTransaction);
+      await WalletService.updateBalance(
+        -expense.amount,
+        'expense',
+        `Expense Payment - ${expense.name}`,
+        expense.category,
+        expenseId,
+        allowNegativeBalance
+      );
     });
   }
 
