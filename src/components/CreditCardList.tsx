@@ -238,7 +238,10 @@ export function CreditCardList() {
         <UpdateStatement
           card={cardToUpdate}
           onClose={() => setCardToUpdate(null)}
-          onUpdate={loadCards}
+          onUpdateComplete={() => {
+            setCardToUpdate(null);
+            loadCards();
+          }}
         />
       )}
 

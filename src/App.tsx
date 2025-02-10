@@ -7,6 +7,7 @@ import { RecurringIncomeManager } from './components/RecurringIncomeManager';
 import { ExpenseList } from './components/ExpenseList';
 import { LoanList } from './components/LoanList';
 import { CreditCardList } from './components/CreditCardList';
+import { Overview } from './components/Overview';
 import { auth } from './config/firebase';
 
 function App() {
@@ -59,7 +60,8 @@ function App() {
         </div>
       </nav>
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 py-4 sm:px-0">
+          <Overview />
           <div className="space-y-6">
             <WalletDisplay />
             <div className="hidden">

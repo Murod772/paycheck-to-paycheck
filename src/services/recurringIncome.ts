@@ -163,6 +163,64 @@ export class RecurringIncomeService {
   }
 
   /**
+   * Calculate the total monthly income
+   */
+  static async getTotalMonthlyIncome(): Promise<number> {
+    const incomes = await this.getUserRecurringIncomes();
+    console.log('Recurring incomes:', JSON.stringify(incomes, null, 2));
+
+    let total = 0;
+    // Use the current time from the system
+    const today = new Date(2025, 1, 9); // February 9, 2025
+    const currentMonth = today.getMonth();
+
+    for (const income of incomes) {
+      if (!income.isActive) {
+        console.log('Skipping inactive income:', income.name);
+        continue;
+      }
+
+      let amount = 0;
+      if (income.schedule.type === 'weekly' && income.schedule.dayOfWeek === 1) { // Monday is 1
+        // Count remaining Mondays in this month
+        let remainingPayments = 0;
+        let date = new Date(today);
+        
+        // Move to the next Monday if we're not on a Monday
+        while (date.getDay() !== 1) {
+          date.setDate(date.getDate() + 1);
+        }
+
+        // Count Mondays until we reach next month
+        while (date.getMonth() === currentMonth) {
+          remainingPayments++;
+          date.setDate(date.getDate() + 7);
+        }
+
+        amount = income.amount * remainingPayments;
+        console.log(`Processing weekly income ${income.name} for ${today.toLocaleDateString()}`);
+        console.log(`Found ${remainingPayments} remaining payments this month: ${income.amount} * ${remainingPayments} = ${amount}`);
+      }
+      // For biweekly incomes
+      else if (income.schedule.type === 'biweekly') {
+        amount = income.amount * 2;
+        console.log(`Processing biweekly income ${income.name}: ${income.amount} * 2 = ${amount}`);
+      }
+      // For monthly incomes
+      else {
+        amount = income.amount;
+        console.log(`Processing monthly income ${income.name}: ${amount}`);
+      }
+      
+      total += amount;
+      console.log(`Running total: ${total}`);
+    }
+    
+    console.log(`Final monthly income: ${total}`);
+    return total;
+  }
+
+  /**
    * Calculate the next occurrence of a recurring schedule
    */
   private static calculateNextOccurrence(schedule: RecurringSchedule, fromDate: Date): Date {

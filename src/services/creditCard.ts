@@ -233,4 +233,9 @@ export class CreditCardService {
       updatedAt: Timestamp.now(),
     });
   }
+
+  static async getTotalMonthlyPaymentsDue(): Promise<number> {
+    const cards = await this.getCreditCards();
+    return cards.reduce((total, card) => total + (card.statementBalance || 0), 0);
+  }
 }

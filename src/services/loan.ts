@@ -158,4 +158,22 @@ export class LoanService {
       updatedAt: serverTimestamp(),
     });
   }
+
+  static async getTotalLoanAmount(): Promise<number> {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error('User must be authenticated');
+    }
+
+    const q = query(
+      this.getUserLoansCollection(userId),
+      where('isActive', '==', true)
+    );
+
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.reduce((total, doc) => {
+      const loan = doc.data() as Loan;
+      return total + (loan.currentBalance || 0);
+    }, 0);
+  }
 }
