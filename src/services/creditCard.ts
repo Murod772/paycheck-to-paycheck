@@ -212,4 +212,25 @@ export class CreditCardService {
       updatedAt: Timestamp.now(),
     });
   }
+
+  static async updateDueDate(
+    cardId: string,
+    dueDate: number
+  ): Promise<void> {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error('User must be authenticated');
+    }
+
+    // Validate due date
+    if (dueDate < 1 || dueDate > 31) {
+      throw new Error('Due date must be between 1 and 31');
+    }
+
+    const cardRef = this.getUserCreditCardDoc(userId, cardId);
+    await updateDoc(cardRef, {
+      dueDate,
+      updatedAt: Timestamp.now(),
+    });
+  }
 }

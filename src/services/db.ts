@@ -17,13 +17,17 @@ import { getAuth } from 'firebase/auth';
 
 const db = getFirestore();
 
+interface BaseDocument extends DocumentData {
+  id: string;
+}
+
 export class DatabaseService {
   /**
    * Create a new document in a collection
    */
-  static async create<T extends DocumentData>(
+  static async create<T extends BaseDocument>(
     collectionName: string,
-    data: T
+    data: Omit<T, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
   ) {
     try {
       const auth = getAuth();
@@ -51,7 +55,7 @@ export class DatabaseService {
   /**
    * Get a document by ID
    */
-  static async getById<T extends DocumentData>(
+  static async getById<T extends BaseDocument>(
     collectionName: string,
     docId: string
   ): Promise<T | null> {
@@ -60,7 +64,7 @@ export class DatabaseService {
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        return docSnap.data() as T;
+        return { id: docSnap.id, ...docSnap.data() } as T;
       }
       return null;
     } catch (error) {
@@ -72,7 +76,7 @@ export class DatabaseService {
   /**
    * Get documents with optional query constraints
    */
-  static async query<T extends DocumentData>(
+  static async query<T extends BaseDocument>(
     collectionName: string,
     constraints: QueryConstraint[] = []
   ): Promise<T[]> {
@@ -95,8 +99,8 @@ export class DatabaseService {
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
-      })) as T[];
+        ...(doc.data() as Omit<T, 'id'>),
+      }) as T);
     } catch (error) {
       console.error('Error querying documents:', error);
       throw error;
@@ -104,12 +108,31 @@ export class DatabaseService {
   }
 
   /**
+   * Get all documents in a collection
+   */
+  static async getAll<T extends BaseDocument>(
+    collectionName: string
+  ): Promise<T[]> {
+    try {
+      const collectionRef = collection(db, collectionName);
+      const querySnapshot = await getDocs(collectionRef);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as Omit<T, 'id'>),
+      }) as T);
+    } catch (error) {
+      console.error('Error getting all documents:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Update a document
    */
-  static async update<T extends DocumentData>(
+  static async update<T extends BaseDocument>(
     collectionName: string,
     docId: string,
-    data: Partial<T>
+    data: Partial<Omit<T, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
   ) {
     try {
       const auth = getAuth();

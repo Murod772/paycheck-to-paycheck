@@ -34,7 +34,6 @@ export function LoanForm({ onSuccess, initialData }: LoanFormProps) {
   // Common style classes
   const labelClasses = "block text-sm font-medium text-gray-700 mb-1";
   const inputClasses = "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm";
-  const selectClasses = "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +43,14 @@ export function LoanForm({ onSuccess, initialData }: LoanFormProps) {
     try {
       const loanData = {
         name,
-        initialPrincipal: parseFloat(initialPrincipal),
-        monthlyPayment: parseFloat(monthlyPayment),
-        ...(interestRate ? { interestRate: parseFloat(interestRate) } : {}),
-        dueDate: parseInt(dueDate, 10),
-        startDate: Timestamp.fromDate(new Date(startDate)),
         lender,
+        initialPrincipal: Number(initialPrincipal),
+        currentBalance: Number(initialPrincipal),
+        monthlyPayment: Number(monthlyPayment),
+        dueDate: Number(dueDate),
+        startDate: Timestamp.fromDate(new Date(startDate)),
+        interestRate: interestRate ? Number(interestRate) : undefined,
+        isActive: true
       };
 
       if (initialData?.id) {

@@ -4,6 +4,7 @@ import { CreditCard, CreditCardPayment } from '../types/collections';
 import { CreditCardPayment as CreditCardPaymentModal } from './CreditCardPayment';
 import { NewCreditCard } from './NewCreditCard';
 import { UpdateStatement } from './UpdateStatement';
+import { EditDueDate } from './EditDueDate';
 
 interface CardWithPayments extends CreditCard {
   recentPayments?: CreditCardPayment[];
@@ -17,6 +18,7 @@ export function CreditCardList() {
   const [showAddCard, setShowAddCard] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CreditCard | null>(null);
   const [cardToUpdate, setCardToUpdate] = useState<CreditCard | null>(null);
+  const [cardToEditDueDate, setCardToEditDueDate] = useState<CreditCard | null>(null);
 
   const loadCards = async () => {
     try {
@@ -138,7 +140,15 @@ export function CreditCardList() {
                       {formatCurrency(card.statementBalance)}
                     </p>
                     <div className="mt-2 text-sm text-gray-500">
-                      <p>Due Date: {formatDate(card.dueDate)}</p>
+                      <div className="flex items-center">
+                        <p>Due Date: {formatDate(card.dueDate)}</p>
+                        <button
+                          onClick={() => setCardToEditDueDate(card)}
+                          className="ml-2 text-blue-600 hover:text-blue-800"
+                        >
+                          Edit
+                        </button>
+                      </div>
                       {card.minimumPayment && (
                         <p>Minimum Payment: {formatCurrency(card.minimumPayment)}</p>
                       )}
@@ -228,10 +238,15 @@ export function CreditCardList() {
         <UpdateStatement
           card={cardToUpdate}
           onClose={() => setCardToUpdate(null)}
-          onUpdateComplete={() => {
-            setCardToUpdate(null);
-            loadCards();
-          }}
+          onUpdate={loadCards}
+        />
+      )}
+
+      {cardToEditDueDate && (
+        <EditDueDate
+          card={cardToEditDueDate}
+          onClose={() => setCardToEditDueDate(null)}
+          onUpdate={loadCards}
         />
       )}
     </div>

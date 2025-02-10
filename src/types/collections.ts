@@ -159,13 +159,15 @@ export interface Transaction extends BaseDocument {
 export enum Collections {
   USERS = 'users',
   USER_WALLETS = 'wallets',
-  USER_INCOMES = 'incomes',
-  USER_RECURRING_INCOMES = 'recurring_incomes',
   USER_EXPENSES = 'expenses',
+  USER_INCOMES = 'incomes',
   USER_LOANS = 'loans',
-  USER_CREDIT_CARDS = 'credit_cards',
-  USER_TRANSACTIONS = 'transactions',
+  USER_CREDIT_CARDS = 'creditCards',
   USER_CREDIT_CARD_PAYMENTS = 'creditCardPayments',
+  USER_RECURRING_INCOMES = 'recurringIncomes',
+  WALLETS = 'wallets',
+  TRANSACTIONS = 'transactions',
+  EXPENSES = 'expenses'
 }
 
 // Helper type for collection names

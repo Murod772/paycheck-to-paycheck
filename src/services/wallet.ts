@@ -6,7 +6,6 @@ import {
   query,
   where,
   getDocs,
-  addDoc,
   orderBy,
   limit,
   getDoc,
@@ -25,7 +24,7 @@ export class WalletService {
   }
 
   private static getUserTransactionsCollection(userId: string) {
-    return collection(db, Collections.USERS, userId, Collections.USER_TRANSACTIONS);
+    return collection(db, Collections.USERS, userId, Collections.TRANSACTIONS);
   }
 
   /**
@@ -99,7 +98,8 @@ export class WalletService {
     type: Transaction['type'],
     description: string,
     category: string,
-    relatedDocId?: string
+    relatedDocId?: string,
+    allowNegativeBalance: boolean = false
   ): Promise<void> {
     const userId = auth.currentUser?.uid;
 
@@ -121,10 +121,12 @@ export class WalletService {
         throw new Error('Wallet not found');
       }
 
-      const currentBalance = walletDoc.data().currentBalance;
-      // For expenses, we use the amount directly since it should already be negative
-      // For income, we ensure it's positive
-      const newBalance = type === 'income' ? currentBalance + Math.abs(amount) : currentBalance + amount;
+      const currentBalance = walletDoc.data()?.currentBalance || 0;
+      const newBalance = currentBalance + amount;
+
+      if (!allowNegativeBalance && newBalance < 0) {
+        throw new Error('Insufficient funds');
+      }
 
       // Update wallet
       transaction.update(walletRef, {

@@ -108,8 +108,15 @@ export class LoanService {
         }
       }
 
-      // Deduct from wallet
-      await WalletService.deductAmount(amount, allowNegativeBalance);
+      // Deduct the payment amount from the wallet
+      await WalletService.updateBalance(
+        -amount,
+        'loan_payment',
+        `Loan Payment - ${loan.name}`,
+        'Loan',
+        loanId,
+        allowNegativeBalance
+      );
 
       // Update loan
       const newBalance = loan.currentBalance - principalPaid;

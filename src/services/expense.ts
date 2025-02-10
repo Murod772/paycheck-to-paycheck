@@ -2,17 +2,14 @@ import { db, auth } from '../config/firebase';
 import {
   collection,
   doc,
+  addDoc,
   getDoc,
   getDocs,
   query,
-  where,
-  addDoc,
   updateDoc,
   serverTimestamp,
   runTransaction,
-  Timestamp,
-  orderBy,
-  deleteDoc
+  orderBy
 } from 'firebase/firestore';
 import { Collections, ExpenseModel } from '../types/collections';
 import { WalletService } from './wallet';
